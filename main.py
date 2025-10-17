@@ -2,9 +2,10 @@ import redis
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Mapped, mapped_column, declarative_base, Session
 from random_data import FakeData
+from json import loads, dumps
 
 engine = create_engine('postgresql://postgres:12345@localhost:5432/postgres')
-redis_client = redis.Redis(host='localhost', port=6379)
+redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
 fake = FakeData()
 
 Base = declarative_base()
@@ -43,6 +44,22 @@ def create_user():
             print('Пользователь добавлен')
     except Exception:
             pass
+    
+
+def get_all_users():
+    cache = redis_client.get('all_users')
+    try:
+        if cache:
+            print(redis_client.get('all_users'), 'Взяли из Redis')
+        else:
+            with Session(engine) as session:
+                users = session.query(User).all()
+                ret_users = [f'{i.name} | {i.age}' for i in users]
+                redis_client.setex(name='all_users', time=10, value=dumps(ret_users))
+                print(redis_client.get('all_users'))
+    except Exception:
+        pass
+
 
 
 def get_user_by_name():
@@ -65,6 +82,7 @@ def menu():
                         1: Добавить тестовые данные
                         2: Добавить пользователя
                         3: Фильтр по имени
+                        4: Все пользователи
                            
                         0: Выйти
 
@@ -77,6 +95,8 @@ def menu():
                 create_user()
             case 3:
                 get_user_by_name()
+            case 4:
+                get_all_users()
             case 0:
                 break
             case _:
