@@ -1,5 +1,5 @@
 import redis
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import Mapped, mapped_column, declarative_base, Session
 from random_data import FakeData
 from json import loads, dumps
@@ -73,6 +73,15 @@ def get_user_by_name():
     except Exception:
         pass
 
+def age_lidets():
+    count = int(input('Сколько человек вывети: '))
+    try:
+        with Session(engine) as session:
+            users = session.query(User).order_by(desc(User.age)).limit(count)
+            for id, user in enumerate(users):
+                print(f'{id + 1} ) {user.name}: {user.age}')
+    except Exception:
+        pass
 
 def menu():
     while True:
@@ -83,6 +92,7 @@ def menu():
                         2: Добавить пользователя
                         3: Фильтр по имени
                         4: Все пользователи
+                        5: От старшего к младшему
                            
                         0: Выйти
 
@@ -97,6 +107,8 @@ def menu():
                 get_user_by_name()
             case 4:
                 get_all_users()
+            case 5:
+                age_lidets()
             case 0:
                 break
             case _:
